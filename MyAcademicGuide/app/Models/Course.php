@@ -10,7 +10,7 @@ class Course extends Model
     use HasFactory;
     protected $table = 'course';
     protected $primaryKey = 'courseid'; // Tell Laravel the correct primary key
-    protected $fillable = ['coursename', 'credits',  'semester'];
+    protected $fillable = ['coursename', 'credits',  'semester', 'coursetype'];
 
     public function departments()
     {
@@ -29,7 +29,7 @@ class Course extends Model
 
     public function enrollments()
     {
-        return $this->hasMany(Enrollment::class, 'enrollmentid', 'enrollmentid');
+        return $this->hasMany(Enrollment::class, 'courseid', 'courseid')->where('studentid', auth()->id());
     }
 
     public function timetables()

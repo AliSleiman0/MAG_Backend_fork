@@ -10,7 +10,8 @@ class Timetable extends Model
     use HasFactory;
 
     protected $fillable = ['userid', 'courseid', 'semester', 'year', 'days', 'time', 'campus'];
-
+    protected $table = 'time_table';
+    protected $primaryKey = 'timetableid';
     public function course()
     {
         return $this->belongsTo(Course::class, 'courseid', 'courseid');
