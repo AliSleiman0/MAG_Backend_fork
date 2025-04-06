@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id('courseid');
             $table->string('coursename');
             $table->integer('credits');
-            $table->enum('semester', ['Fall', 'Spring', 'Summer']);
-            $table->string('coursetype');
+            $table->enum('semester', ['Fall', 'Spring', 'Summer', 'Fall-Spring', 'Fall-Summer', 'Spring-Summer', 'All Semesters']);
+            $table->enum('coursetype', ['Major', 'Core', 'Elective', 'Remedial']);
             $table->timestamps();
         });
     }

@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class CoursePrerequisite extends Model
 {
     use HasFactory;
-    protected $table='course_prerequisite';
+    protected $table = 'course_prerequisite';
+    protected $primaryKey = 'courseid';
     protected $fillable = ['courseid', 'prerequisitecourseid'];
 
     // The main course that has prerequisites

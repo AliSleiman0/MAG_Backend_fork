@@ -10,7 +10,7 @@ class Enrollment extends Model
     use HasFactory;
     protected $table = 'enrollment';
     protected $primaryKey = 'enrollmentid'; // Tell Laravel the correct primary key
-    protected $fillable = ['studentid', 'courseid', 'timetableid', 'status'];
+    protected $fillable = ['studentid', 'courseid', 'timetableid', 'status','grade'];
 
     public function student()
     {

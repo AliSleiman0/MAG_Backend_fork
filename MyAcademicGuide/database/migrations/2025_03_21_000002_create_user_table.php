@@ -18,6 +18,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->enum('usertype', ['Student', 'Advisor', 'IT', 'Professor']);
             $table->foreignId('campusid')->constrained('campus', 'campusid')->onDelete('cascade')->onUpdate('cascade');
+            $table->string('image')->nullable();
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();

@@ -28,21 +28,21 @@ class User extends Authenticatable
         'email',
         'password',
         'campusid',
-        'usertype'
+        'usertype',
+        'imagepath',
     ];
     public function student(): HasOne
     {
-        return $this->hasOne(Student::class, 'userid', 'userid');
+        return $this->hasOne(Student::class, 'studentid', 'userid');
     }
-    public function sdvisor(): HasOne
+    public function advisor(): HasOne
     {
         return $this->hasOne(Advisor::class, 'userid', 'userid');
     }
     public function campus(): BelongsTo
     {
-        return $this->belongsTo(Campus::class, 'campusid', 'campusid');
+        return $this->belongsTo(Campus::class, 'campusid');
     }
-
 
     /**
      * The attributes that should be hidden for serialization.

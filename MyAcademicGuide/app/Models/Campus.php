@@ -10,6 +10,9 @@ class Campus extends Model
 {
     use HasFactory;
     protected $fillable = ['campusname'];
+    protected $table = 'campus';
+    protected $primaryKey = 'campusid';
+
     public function users(): HasMany
     {
         return $this->hasMany(User::class, 'campusid', 'campusid');
