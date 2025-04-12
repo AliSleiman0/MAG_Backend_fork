@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('course_prerequisite', function (Blueprint $table) {
             $table->foreignId('courseid')->constrained('course', 'courseid')->onDelete('cascade')->onUpdate('cascade');
             $table->foreignId('prerequisitecourseid')->constrained('course', 'courseid')->onDelete('cascade');
+            $table->foreignId('corerequisiteid')->constrained('course', 'courseid')->onDelete('cascade');
             $table->primary(['courseid', 'prerequisitecourseid']);
             $table->timestamps();
         });

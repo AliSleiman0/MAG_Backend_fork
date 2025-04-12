@@ -14,7 +14,7 @@ class POSController extends Controller
     public function pos(Request $request)
     {
         $user = $request->user()->userid;
-        $courses = Student::where('studentid', $user)->with('department.courses.enrollments.timetable', 'department.courses.prerequisites', 'department.courses.prerequisiteFor')->first();
+        $courses = Student::where('studentid', $user)->with('department.courses.enrollments.timetable', 'department.courses.prerequisites', 'department.courses.prerequisiteFor', 'department.courses.prerequisites')->first();
         $passedcourses = [];
         $registeredcourses = [];
         $remainingcourses = [];
@@ -94,12 +94,15 @@ class POSController extends Controller
     {
         $prerequisit = [];
         $postrequisit = [];
-
+        $corerequisites = [];
         foreach ($course->prerequisites as $prerequisiteId) {
             $prerequisit[] = $prerequisiteId;
         }
         foreach ($course->prerequisiteFor as $prerequisite) {
             $postrequisit[] = $prerequisite->courseid;
+        }
+        foreach ($course->corerequisites as $core) {
+            $corerequisites[] = $core->corerequisiteid;
         }
 
         // Check if course exists in canregister or cannotregister and set status
@@ -121,6 +124,7 @@ class POSController extends Controller
             'status' => $status, // Updated status
             'prerequisites' => $prerequisit,
             'postrequisites' => $postrequisit,
+            'corerequisites' => $corerequisites
         ];
     }
 

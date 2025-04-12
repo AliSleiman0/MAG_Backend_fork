@@ -21,6 +21,10 @@ class Course extends Model
     {
         return $this->hasMany(CoursePrerequisite::class, 'courseid', 'courseid');
     }
+    public function corerequisites()
+    {
+        return $this->hasMany(CoursePrerequisite::class, 'courseid', 'courseid');
+    }
     // A course can be a prerequisite for multiple courses
     public function prerequisiteFor()
     {

@@ -22,3 +22,4 @@ Route::get('/pos', action: [POSController::class, 'pos'])->middleware('auth:sanc
 Route::post('/verify-new-password', [ProfileController::class, 'verifyNewPasswordAndSendCode'])->middleware('auth:sanctum');;
 Route::post('/update-password', [ProfileController::class, 'updatePassword'])->middleware('auth:sanctum');;
 Route::get('/automated_pos', action: [AutomatedPOSController::class, 'automated_pos'])->middleware('auth:sanctum')->middleware('auth:sanctum');
+Route::get('/rest_pos', action: [AutomatedPOSController::class, 'rest_pos'])->middleware('auth:sanctum')->middleware('auth:sanctum');
