@@ -12,10 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('course_prerequisite', function (Blueprint $table) {
-            $table->foreignId('courseid')->constrained('course', 'courseid')->onDelete('cascade')->onUpdate('cascade');
-            $table->foreignId('prerequisitecourseid')->constrained('course', 'courseid')->onDelete('cascade');
-            $table->foreignId('corerequisiteid')->constrained('course', 'courseid')->onDelete('cascade');
-            $table->primary(['courseid', 'prerequisitecourseid']);
+            $table->unsignedBigInteger('courseid');
+            $table->unsignedBigInteger('prerequisitecourseid')->nullable();
+            $table->unsignedBigInteger('corerequisiteid')->nullable();
+
+            $table->foreign('courseid')->references('courseid')->on('course')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreign('prerequisitecourseid')->references('courseid')->on('course')->onDelete('cascade');
+            $table->foreign('corerequisiteid')->references('courseid')->on('course')->onDelete('cascade');
+
+            $table->unique(['courseid', 'prerequisitecourseid', 'corerequisiteid'], 'course_prereq_unique');
             $table->timestamps();
         });
     }

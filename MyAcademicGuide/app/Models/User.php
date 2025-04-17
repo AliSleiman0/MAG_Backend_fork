@@ -29,7 +29,7 @@ class User extends Authenticatable
         'password',
         'campusid',
         'usertype',
-        'imagepath',
+        'image',
     ];
     public function student(): HasOne
     {

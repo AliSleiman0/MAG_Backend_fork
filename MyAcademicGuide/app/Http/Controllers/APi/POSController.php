@@ -20,7 +20,8 @@ class POSController extends Controller
         $remainingcourses = [];
         $canregister = [];
         $cannotregister = [];
-
+        $allCoursesInfo = $courses->department->courses;
+        $CoursesIds = $allCoursesInfo->pluck('courseid')->unique()->toArray();
         // Loop through the courses under the department
         foreach ($courses->department->courses as $course) {
             $coursestatus = Null;
@@ -31,20 +32,20 @@ class POSController extends Controller
                         $course->status = $enrollment->status;
                         $course->semestertaken = $enrollment->timetable->semester;
                         $course->yeartaken = $enrollment->timetable->year;
-                        $passedcourses[] = $this->prepareCourseData($course); // Add the course to the passedcourses array
+                        $passedcourses[] = $this->prepareCourseData($course, $CoursesIds); // Add the course to the passedcourses array
                         $coursestatus = 'Passed';
                         break; // Stop checking further enrollments for this course
                     } elseif ($enrollment->status == 'Registered') {
                         $coursestatus = 'Registered';
-                        $registeredcourses[] = $this->prepareCourseData($course);
+                        $registeredcourses[] = $this->prepareCourseData($course, $CoursesIds);
                         break;
                     }
                 }
                 if ($coursestatus == Null) {
-                    $remainingcourses[] = $this->prepareCourseData($course);
+                    $remainingcourses[] = $this->prepareCourseData($course, $CoursesIds);
                 }
             } else {
-                $remainingcourses[] = $this->prepareCourseData($course);
+                $remainingcourses[] = $this->prepareCourseData($course, $CoursesIds);
             }
         }
 
@@ -54,12 +55,15 @@ class POSController extends Controller
                 $allPrerequisitesMet = true;
 
                 foreach ($prerequisites as $prerequisite) {
+                    // Skip if the prerequisite course is not part of the student's major
+                    if (!in_array($prerequisite['prerequisitecourseid'], $CoursesIds)) {
+                        continue;
+                    }
                     $isInPassed = collect($passedcourses)->contains('courseid', $prerequisite['prerequisitecourseid']);
                     $isInRegistered = collect($registeredcourses)->contains('courseid', $prerequisite['prerequisitecourseid']);
 
                     // If a prerequisite is neither passed nor registered, mark course as cannot register
                     if (!$isInPassed && !$isInRegistered) {
-                        $cannotregister[] = $course;
                         $allPrerequisitesMet = false;
                         break; // Stop checking further prerequisites for this course
                     }
@@ -67,13 +71,15 @@ class POSController extends Controller
 
                 if ($allPrerequisitesMet) {
                     $canregister[] = $course;
+                } else {
+                    $cannotregister[] = $course;
                 }
             } else {
-                $cannotregister[] = $course;
+                $canregister[] = $course;
             }
         }
-        $allCourses = $courses->department->courses->map(function ($course) use ($cannotregister, $canregister) {
-            return $this->prepareAllCourseData($course, $canregister, $cannotregister);
+        $allCourses = $courses->department->courses->map(function ($course) use ($cannotregister, $canregister, $CoursesIds) {
+            return $this->prepareAllCourseData($course, $canregister, $cannotregister, $CoursesIds);
         });
 
 
@@ -90,19 +96,34 @@ class POSController extends Controller
     /**
      * Prepare course data for response
      */
-    private function prepareAllCourseData($course, $canregister = [], $cannotregister = [])
+    private function prepareAllCourseData($course, $canregister = [], $cannotregister = [], $CoursesIds)
     {
         $prerequisit = [];
         $postrequisit = [];
         $corerequisites = [];
         foreach ($course->prerequisites as $prerequisiteId) {
-            $prerequisit[] = $prerequisiteId;
+            if ($prerequisiteId->prerequisitecourseid != null) {
+                if (!in_array($prerequisiteId['prerequisitecourseid'], $CoursesIds)) {
+                    continue;
+                }
+                $prerequisit[] = $prerequisiteId;
+            }
         }
         foreach ($course->prerequisiteFor as $prerequisite) {
-            $postrequisit[] = $prerequisite->courseid;
+            if ($prerequisite->courseid != null) {
+                if (!in_array($prerequisite['corerequisiteid'], $CoursesIds)) {
+                    continue;
+                }
+                $postrequisit[] = $prerequisite->courseid;
+            }
         }
         foreach ($course->corerequisites as $core) {
-            $corerequisites[] = $core->corerequisiteid;
+            if ($core->corerequisiteid != null) {
+                if (!in_array($core['corerequisiteid'], $CoursesIds)) {
+                    continue;
+                }
+                $corerequisites[] = $core->corerequisiteid;
+            }
         }
 
         // Check if course exists in canregister or cannotregister and set status
@@ -129,15 +150,34 @@ class POSController extends Controller
     }
 
 
-    private function prepareCourseData($course)
+    private function prepareCourseData($course, $CoursesIds)
     {
         $prerequisit = [];
         $postrequisit = [];
+        $corerequisites = [];
         foreach ($course->prerequisites as $prerequisiteId) {
-            $prerequisit[] = $prerequisiteId;
+            if ($prerequisiteId->prerequisitecourseid != null) {
+                if (!in_array($prerequisiteId['prerequisitecourseid'], $CoursesIds)) {
+                    continue;
+                }
+                $prerequisit[] = $prerequisiteId;
+            }
         }
         foreach ($course->prerequisiteFor as $prerequisite) {
-            $postrequisit[] = $prerequisite->courseid;
+            if ($prerequisite->courseid != null) {
+                if (!in_array($prerequisite['corerequisiteid'], $CoursesIds)) {
+                    continue;
+                }
+                $postrequisit[] = $prerequisite->courseid;
+            }
+        }
+        foreach ($course->corerequisites as $core) {
+            if ($core->corerequisiteid != null) {
+                if (!in_array($core['corerequisiteid'], $CoursesIds)) {
+                    continue;
+                }
+                $corerequisites[] = $core->corerequisiteid;
+            }
         }
         if ($course->status == 'Passed') {
             return [
@@ -151,6 +191,7 @@ class POSController extends Controller
                 'yeartaken' => $course->yeartaken,
                 'prerequisites' => $prerequisit,
                 'postrequisites' => $postrequisit,
+                'corerequisites' => $corerequisites
 
             ];
         } else {
@@ -163,6 +204,7 @@ class POSController extends Controller
                 'coursetype' => $course->coursetype,
                 'prerequisites' => $prerequisit,
                 'postrequisites' => $postrequisit,
+                'corerequisites' => $corerequisites
 
             ];
         }
