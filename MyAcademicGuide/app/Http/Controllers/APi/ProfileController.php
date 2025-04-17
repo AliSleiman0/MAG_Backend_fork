@@ -21,31 +21,37 @@ class ProfileController extends Controller
             'fullname' => $profileinfo->fullname,
             'email' => $profileinfo->email,
             'campusname' => $profileinfo->campus->campusname,
-            'imagepath' => $profileinfo->imagepath,
+            'image' => $profileinfo->image,
+        ]);
+    }
+    public function addimage(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'image' => 'required|string' // or 'required|image' if it's a file
+        ]);
+
+        $user->update([
+            'image' => $validated['image']
+        ]);
+
+        return response()->json([
+            'message' => 'Image updated successfully.'
         ]);
     }
 
-    public function addimage(Request $request)
-    {
-        $user = User::find($request->user()->userid);
-        $user->update(['imagepath' => $request->imagepath]);
-        return response()->json([
-            'message' => 'Image updated successfully.',
-        ]);
-    }
+
 
     /**
      * Remove the specified resource from storage.
      */
-    public function deleteimage(Request $request)
+    public function deleteimage(Request $request, User $user)
     {
-        $user = User::find($request->user()->userid);
-        if ($user->imagepath == null) {
+        if ($user->image == null) {
             return response()->json([
                 'message' => 'No image to delete.',
             ]);
         }
-        $user->update(['imagepath' => null]);
+        $user->update(['image' => null]);
         return response()->json([
             'message' => 'Image deleted successfully.',
         ]);

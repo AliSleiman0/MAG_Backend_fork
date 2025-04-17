@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('courseid')->constrained('course', 'courseid')->onDelete('cascade')->onUpdate('cascade');
             $table->foreignId('timetableid')->constrained('time_table', 'timetableid')->onDelete('cascade')->onUpdate('cascade');
             $table->string('grade')->nullable();
-            $table->enum('status', ['Passed', 'Failed', 'Registered']);
+            $table->enum('status', ['Passed', 'Failed', 'Registered','WithDrawn']);
             $table->timestamps();
         });
     }
