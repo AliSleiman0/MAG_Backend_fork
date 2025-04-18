@@ -4,7 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\APi\DashboardController;
 use App\Http\Controllers\APi\ProfileController;
 use App\Http\Controllers\APi\POSController;
-use App\Http\Controllers\APi\CourseController;
+use App\Http\Controllers\APi\CustomizedPOSController;
 use App\Http\Controllers\APi\AutomatedPOSController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -21,7 +21,7 @@ Route::put('/profile/addimage/{user}', [ProfileController::class, 'addimage'])->
 Route::put('/profile/updatepassword/{user}', [ProfileController::class, 'updatepassword'])->middleware('auth:sanctum');
 Route::get('/pos', action: [POSController::class, 'pos'])->middleware('auth:sanctum')->middleware('auth:sanctum');
 Route::post('/verify-new-password', [ProfileController::class, 'verifyNewPasswordAndSendCode'])->middleware('auth:sanctum');;
-Route::post('/update-password', [ProfileController::class, 'updatePassword'])->middleware('auth:sanctum');;
-Route::get('/automated_pos', action: [AutomatedPOSController::class, 'automated_pos'])->middleware('auth:sanctum')->middleware('auth:sanctum');
-Route::get('/rest_pos', action: [AutomatedPOSController::class, 'rest_pos'])->middleware('auth:sanctum')->middleware('auth:sanctum');
-
+Route::post('/update-password', [ProfileController::class, 'updatePassword'])->middleware('auth:sanctum');
+Route::get('/automated_pos', action: [AutomatedPOSController::class, 'automated_pos'])->middleware('auth:sanctum');
+Route::get('/rest_pos', action: [AutomatedPOSController::class, 'rest_pos'])->middleware('auth:sanctum');
+Route::get('/CustomizedPOS', action: [CustomizedPOSController::class, 'CustomizedPOS'])->middleware('auth:sanctum');
