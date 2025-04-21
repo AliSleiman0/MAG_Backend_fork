@@ -15,12 +15,14 @@ class ProfileController extends Controller
     public function profile(Request $request)
     {
         $user = $request->user()->userid;
-        $profileinfo = User::with('campus')->where('userid', $user)->first();
+        $profileinfo = User::with(['campus', 'student.department.school'])->where('userid', $user)->first();
         return response()->json([
             'userid' => $profileinfo->userid,
             'fullname' => $profileinfo->fullname,
             'email' => $profileinfo->email,
             'campusname' => $profileinfo->campus->campusname,
+            'department'=>$profileinfo->student->department->departmentname,
+            'schoolname'=>$profileinfo->student->department->school->schoolname,
             'image' => $profileinfo->image,
         ]);
     }
@@ -118,5 +120,24 @@ class ProfileController extends Controller
         Session::forget('verified_user_id');
 
         return response()->json(['message' => 'Password updated successfully.']);
+    }
+    public function getadvisors(Request $request)
+    {
+        $finalform = [];
+        $student = $request->user()->userid;
+        $studentinfo = User::where('userid', $student)->with(['student.department'])->get(['campusid', 'userid']);
+        $studentschool = $studentinfo[0]->student->department->schoolid;
+        $advisor = User::where('usertype', 'Advisor')->where('campusid', $studentinfo[0]->campusid)->with('advisor')->whereHas('advisor', function ($query) use ($studentschool) {
+            $query->where('schoolid', $studentschool);
+        })->get(['userid', 'fullname', 'email', 'image']);
+        $finalform = $advisor->map(function ($advisor) {
+            return [
+                'userid' => $advisor->userid,
+                'fullname' => $advisor->fullname,
+                'email' => $advisor->email,
+                'image' => $advisor->image,
+            ];
+        });
+        return $finalform;
     }
 }

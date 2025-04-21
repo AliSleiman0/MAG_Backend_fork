@@ -1,13 +1,16 @@
 <?php
 
+use App\Http\Controllers\APi\AdvisorController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\APi\DashboardController;
 use App\Http\Controllers\APi\ProfileController;
 use App\Http\Controllers\APi\POSController;
 use App\Http\Controllers\APi\CustomizedPOSController;
 use App\Http\Controllers\APi\AutomatedPOSController;
+use App\Http\Controllers\APi\TimeTableController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpKernel\Profiler\Profile;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -25,3 +28,7 @@ Route::post('/update-password', [ProfileController::class, 'updatePassword'])->m
 Route::get('/automated_pos', action: [AutomatedPOSController::class, 'automated_pos'])->middleware('auth:sanctum');
 Route::get('/rest_pos', action: [AutomatedPOSController::class, 'rest_pos'])->middleware('auth:sanctum');
 Route::get('/CustomizedPOS', action: [CustomizedPOSController::class, 'CustomizedPOS'])->middleware('auth:sanctum');
+Route::get('/setschedule', action: [TimeTableController::class, 'setschedule'])->middleware('auth:sanctum');
+Route::get('/getadvisors', action: [ProfileController::class, 'getadvisors'])->middleware('auth:sanctum');
+Route::get('/getstudents/{user}', action: [AdvisorController::class, 'getstudents'])->middleware('auth:sanctum');
+Route::get('/advisorprofile/{user}', action: [AdvisorController::class, 'advisorprofile'])->middleware('auth:sanctum');

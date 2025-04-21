@@ -4,46 +4,32 @@ namespace App\Http\Controllers\APi;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Timetable;
 
 class TimeTableController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function setschedule(Request $request)
     {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $coursesIds = $request->courseids;
+        $semester = $request->semester;
+        $year = $request->year;
+        $campusid = $request->user()->campusid;
+        $relative_offerings = [];
+        $offerings = TimeTable::where('semester', $semester)->where('campusid', $campusid)
+            ->where('year', $year)->whereIn('courseid', $coursesIds)->with('professor')->get();
+        // Group offerings by courseid
+        $grouped = $offerings->groupBy('courseid')->map(function ($items, $courseid) {
+            return [
+                'courseid' => (int) $courseid,
+                'offerings' =>  $items->map(function ($item) {
+                    $professor = $item->professor->fullname; // fallback if missing
+                    return $professor . ' | ' . $item->days . ' | ' . $item->time;
+                })->values()
+            ];
+        })->values();
+        return $grouped;
     }
 }

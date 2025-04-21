@@ -11,7 +11,8 @@ class Advisor extends Model
     use HasFactory;
 
     protected $fillable = ['advisorid', 'schoolid'];
-
+    protected $table = 'advisor';
+    protected $primaryKey = 'advisorid'; // Tell Laravel the correct primary key
     public function user()
     {
         return $this->belongsTo(User::class, 'advisorid', 'userid');
