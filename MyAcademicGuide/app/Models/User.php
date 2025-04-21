@@ -37,7 +37,7 @@ class User extends Authenticatable
     }
     public function advisor(): HasOne
     {
-        return $this->hasOne(Advisor::class, 'userid', 'userid');
+        return $this->hasOne(Advisor::class, 'advisorid', 'userid');
     }
     public function campus(): BelongsTo
     {
