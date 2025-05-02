@@ -134,18 +134,215 @@ class TimeTableController extends Controller
         })->filter(function ($course) {
             return collect($course['sections'])->isNotEmpty(); // Keep only courses with at least one valid section
         })->values(); // Re-index the collection
-        $validCourses = $validCourses->map(function ($course) {
-            $course['sections'] = collect($course['sections'])->map(function ($section) {
-                $section['startTime'] = $section['startTime']->format('H:i');
-                $section['endTime'] = $section['endTime'] ? $section['endTime']->format('H:i') : null;
-                return $section;
-            });
-            return $course;
+        $priority = [
+            'General Education' => 4,
+            'General Elective'  => 3,
+            'Major Elective'    => 2,
+            'Major'             => 1,
+            'Core'              => 0,
+        ];
+        // If from Collection or uncertain source
+        $validCourses = collect($validCourses)->toArray();
+        usort($validCourses, function ($a, $b) use ($priority) {
+            return $priority[$a['coursetype']] <=> $priority[$b['coursetype']];
         });
+        $finalSections = [];
+        $courseCount = count($validCourses);
+        $allPossibleSections = [];
 
-        return $validCourses; // Return or further process the filtered courses
+        foreach ($validCourses as $i => $course) {
+            $possibleSections = [];
+
+            foreach ($course['sections'] as $currentSection) {
+                $conflictCount = 0;
+                $hasHardConflict = false;
+                $sectionDays = explode(',', $currentSection['days']);
+
+                // 🔁 Check for hard conflicts against finalized selections (regardless of position)
+                foreach ($finalSections as $selectedSection) {
+                    $selectedDays = explode(',', $selectedSection['days']);
+                    $overlappingDays = array_intersect($sectionDays, $selectedDays);
+
+                    if (!empty($overlappingDays)) {
+                        if (
+                            $currentSection['startTime']->lt($selectedSection['endTime']) &&
+                            $currentSection['endTime']->gt($selectedSection['startTime'])
+                        ) {
+                            $hasHardConflict = true;
+                            break;
+                        }
+                    }
+                }
+
+                // 🔁 Check for soft conflicts (conflict count) with *all other course sections*
+                for ($j = 0; $j < $courseCount; $j++) {
+                    if ($j === $i) continue; // don't compare with itself
+
+                    foreach ($validCourses[$j]['sections'] as $otherSection) {
+                        $otherDays = explode(',', $otherSection['days']);
+                        $overlappingDays = array_intersect($sectionDays, $otherDays);
+
+                        if (!empty($overlappingDays)) {
+                            if (
+                                $currentSection['startTime']->lt($otherSection['endTime']) &&
+                                $currentSection['endTime']->gt($otherSection['startTime'])
+                            ) {
+                                //$hasHardConflict=true;
+                                $conflictCount++;
+                            }
+                        }
+                    }
+                }
+
+                if (!$hasHardConflict) {
+                    $possibleSections[] = array_merge($currentSection, ['conflictCount' => $conflictCount]);
+                }
+            }
+            // Select best
+            if (!empty($possibleSections)) {
+                usort($possibleSections, function ($a, $b) {
+                    if ($a['conflictCount'] !== $b['conflictCount']) {
+                        return $a['conflictCount'] <=> $b['conflictCount'];
+                    }
+                    return $a['startTime']->lt($b['startTime']) ? -1 : 1;
+                });
+                if (!empty($possibleSections)) {
+                    // Find the minimum conflict count
+                    $minConflictCount = min(array_column($possibleSections, 'conflictCount'));
+
+                    // Filter to keep only sections with that minimum conflict count
+                    $possibleSections = array_filter($possibleSections, function ($section) use ($minConflictCount) {
+                        return $section['conflictCount'] === $minConflictCount;
+                    });
+
+                    // Reindex array to keep it clean
+                    $possibleSections = array_values($possibleSections);
+                }
+                $allPossibleSections[] = [
+                    'courseid'   => $course['courseid'],
+                    'coursecode' => $course['coursecode'],
+                    'coursename' => $course['coursename'],
+                    'sections'   => $possibleSections,
+                ];
+                $chosen = $possibleSections[0];
+                $finalSections[] = array_merge($chosen, [
+                    'courseid'   => $course['courseid'],
+                    'coursecode' => $course['coursecode'],
+                    'coursename' => $course['coursename'],
+                ]);
+            }
+        }
+        $schedule = $this->generateOptimalSchedule($allPossibleSections);
+        return $schedule; // Return or further process the filtered courses
+
+    }
+    private function generateOptimalSchedule($allPossibleSections)
+    {
+        // First ensure ALL courses are processed
+        $singleSectionCourses = [];
+        $multiSectionCourses = [];
+
+        foreach ($allPossibleSections as $course) {
+            if (count($course['sections']) === 1) {
+                $singleSectionCourses[] = $course;
+            } else {
+                $multiSectionCourses[] = $course;
+            }
+        }
+
+        // Process single-section courses first (including Course 110)
+        $schedule = [];
+        foreach ($singleSectionCourses as $course) {
+            $schedule[] = array_merge($course['sections'][0], [
+                'courseid' => $course['courseid'],
+                'coursecode' => $course['coursecode'],
+                'coursename' => $course['coursename'],
+            ]);
+        }
+
+        // Process multi-section courses with STRONG same-day preference
+        foreach ($multiSectionCourses as $course) {
+            $bestSection = $this->findBestSection($schedule, $course['sections']);
+            $schedule[] = array_merge($bestSection, [
+                'courseid' => $course['courseid'],
+                'coursecode' => $course['coursecode'],
+                'coursename' => $course['coursename'],
+            ]);
+        }
+
+        return $schedule;
     }
 
+    private function findBestSection($currentSchedule, $possibleSections)
+    {
+        $bestScore = PHP_INT_MAX;
+        $bestSection = null;
+
+        foreach ($possibleSections as $section) {
+            $score = $this->calculateSectionScore($currentSchedule, $section);
+
+            if ($score < $bestScore) {
+                $bestScore = $score;
+                $bestSection = $section;
+            }
+        }
+
+        return $bestSection;
+    }
+
+    function calculateSectionScore($schedule, $newSection)
+    {
+        $score = 0;
+        $newDays = $newSection['daysOfWeek'];
+        $newStart = strtotime($newSection['startTime']);
+        $newEnd = strtotime($newSection['endTime']);
+
+        // 1. Calculate day-sharing strength (MASSIVE bonus)
+        $sharedDayStrength = 0;
+        $existingDays = [];
+
+        foreach ($schedule as $existing) {
+            foreach ($existing['daysOfWeek'] as $day) {
+                $existingDays[$day] = true;
+            }
+        }
+
+        // 2. Apply HUGE bonus for shared days (10000 per shared day)
+        foreach ($newDays as $day) {
+            if (isset($existingDays[$day])) {
+                $sharedDayStrength += 10000; // Extremely large bonus
+            }
+        }
+        $score -= $sharedDayStrength;
+
+        // 3. Calculate gap score ONLY on shared days
+        if ($sharedDayStrength > 0) {
+            $minGap = PHP_INT_MAX;
+            foreach ($schedule as $existing) {
+                $commonDays = array_intersect($newDays, $existing['daysOfWeek']);
+                if (empty($commonDays)) continue;
+
+                $existingStart = strtotime($existing['startTime']);
+                $existingEnd = strtotime($existing['endTime']);
+
+                if ($newStart >= $existingEnd) {
+                    $gap = $newStart - $existingEnd;
+                } elseif ($newEnd <= $existingStart) {
+                    $gap = $existingStart - $newEnd;
+                } else {
+                    $gap = 0;
+                }
+
+                if ($gap < $minGap) $minGap = $gap;
+            }
+            $score += ($minGap !== PHP_INT_MAX) ? $minGap : 0;
+        }
+
+        // 4. Tiny time preference (minimal impact)
+        $score += $newStart / 36000; // Very small weight
+
+        return $score;
+    }
     private function overlapsWithBreak($section, $break)
     {
         return $section['startTime']->lt($break['end']) && $section['endTime']->gt($break['start']);
