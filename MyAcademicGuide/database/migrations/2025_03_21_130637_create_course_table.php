@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('course', function (Blueprint $table) {
             $table->id('courseid');
             $table->string('coursename');
+            $table->string('coursecode');
             $table->integer('credits');
             $table->enum('semester', ['Fall', 'Spring', 'Summer', 'Fall-Spring', 'Fall-Summer', 'Spring-Summer', 'Fall-Spring-Summer']);
             $table->enum('coursetype', ['Core', 'Major',  'Major Elective', 'General Elective', 'General Education']);

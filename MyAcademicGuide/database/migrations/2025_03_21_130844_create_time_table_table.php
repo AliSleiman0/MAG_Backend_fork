@@ -18,7 +18,8 @@ return new class extends Migration
             $table->enum('semester', ['Fall', 'Spring', 'Summer']);
             $table->year('year');
             $table->string('days');
-            $table->time('time');
+            $table->time('start_time');
+            $table->time('end_time');
             $table->foreignId('campusid')->constrained('campus', 'campusid')->onDelete('cascade')->onUpdate('cascade');
             $table->timestamps();
         });
