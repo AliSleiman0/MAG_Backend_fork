@@ -32,3 +32,4 @@ Route::get('/setschedule', action: [TimeTableController::class, 'setschedule'])-
 Route::get('/getadvisors', action: [ProfileController::class, 'getadvisors'])->middleware('auth:sanctum');
 Route::get('/getstudents/{user}', action: [AdvisorController::class, 'getstudents'])->middleware('auth:sanctum');
 Route::get('/advisorprofile/{user}', action: [AdvisorController::class, 'advisorprofile'])->middleware('auth:sanctum');
+Route::get('/smartschedule', action: [TimeTableController::class, 'smartschedule'])->middleware('auth:sanctum');
