@@ -27,9 +27,9 @@ Route::post('/verify-new-password', [ProfileController::class, 'verifyNewPasswor
 Route::post('/update-password', [ProfileController::class, 'updatePassword'])->middleware('auth:sanctum');
 Route::get('/automated_pos', action: [AutomatedPOSController::class, 'automated_pos'])->middleware('auth:sanctum');
 Route::get('/rest_pos', action: [AutomatedPOSController::class, 'rest_pos'])->middleware('auth:sanctum');
-Route::get('/CustomizedPOS', action: [CustomizedPOSController::class, 'CustomizedPOS'])->middleware('auth:sanctum');
-Route::get('/setschedule', action: [TimeTableController::class, 'setschedule'])->middleware('auth:sanctum');
+Route::post('/CustomizedPOS', action: [CustomizedPOSController::class, 'CustomizedPOS'])->middleware('auth:sanctum');
+Route::post('/setschedule', action: [TimeTableController::class, 'setschedule'])->middleware('auth:sanctum');
 Route::get('/getadvisors', action: [ProfileController::class, 'getadvisors'])->middleware('auth:sanctum');
 Route::get('/getstudents/{user}', action: [AdvisorController::class, 'getstudents'])->middleware('auth:sanctum');
 Route::get('/advisorprofile/{user}', action: [AdvisorController::class, 'advisorprofile'])->middleware('auth:sanctum');
-Route::get('/smartschedule', action: [TimeTableController::class, 'smartschedule'])->middleware('auth:sanctum');
+Route::post('/smartschedule', action: [TimeTableController::class, 'smartschedule'])->middleware('auth:sanctum');
