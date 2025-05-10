@@ -54,4 +54,16 @@ class AdvisorController extends Controller
             'image' => $profileinfo->image,
         ]);
     }
+    public function profile(Request $request, User $user)
+    {
+        $profileinfo = User::with(['campus'])->where('userid', $user->userid)->first();
+        return response()->json([
+            'userid' => $profileinfo->userid,
+            'usertype'=>$profileinfo->usertype,
+            'fullname' => $profileinfo->fullname,
+            'email' => $profileinfo->email,
+            'campusname' => $profileinfo->campus->campusname,
+            'image' => $profileinfo->image,
+        ]);
+    }
 }

@@ -33,4 +33,4 @@ Route::get('/getadvisors', action: [ProfileController::class, 'getadvisors'])->m
 Route::get('/getstudents/{user}', action: [AdvisorController::class, 'getstudents'])->middleware('auth:sanctum');
 Route::get('/advisorprofile/{user}', action: [AdvisorController::class, 'advisorprofile'])->middleware('auth:sanctum');
 Route::post('/smartschedule', action: [TimeTableController::class, 'smartschedule'])->middleware('auth:sanctum');
-Route::get('/getProfileById/{user}', action: [AdvisorController::class, 'advisorprofile']);
+Route::get('/getProfileById/{user}', action: [AdvisorController::class, 'profile']);
