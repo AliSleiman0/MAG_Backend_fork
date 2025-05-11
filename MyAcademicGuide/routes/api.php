@@ -21,7 +21,7 @@ Route::get('/index', [DashboardController::class, 'index'])->middleware('auth:sa
 Route::get('/profile', [ProfileController::class, 'profile'])->middleware('auth:sanctum');
 Route::put('/profile/deleteimage/{user}', [ProfileController::class, 'deleteimage'])->middleware('auth:sanctum');
 Route::put('/profile/addimage/{user}', [ProfileController::class, 'addimage'])->middleware('auth:sanctum');
-Route::put('/profile/updatepassword/{user}', [ProfileController::class, 'updatepassword'])->middleware('auth:sanctum');
+Route::put('/profile/updatepassword', [ProfileController::class, 'updatepassword'])->middleware('auth:sanctum');
 Route::get('/pos', action: [POSController::class, 'pos'])->middleware('auth:sanctum')->middleware('auth:sanctum');
 Route::post('/verify-new-password', [ProfileController::class, 'verifyNewPasswordAndSendCode'])->middleware('auth:sanctum');;
 Route::post('/update-password', [ProfileController::class, 'updatePassword'])->middleware('auth:sanctum');
@@ -34,3 +34,4 @@ Route::get('/getstudents/{user}', action: [AdvisorController::class, 'getstudent
 Route::get('/advisorprofile/{user}', action: [AdvisorController::class, 'advisorprofile'])->middleware('auth:sanctum');
 Route::post('/smartschedule', action: [TimeTableController::class, 'smartschedule'])->middleware('auth:sanctum');
 Route::get('/getProfileById/{user}', action: [AdvisorController::class, 'profile']);
+Route::put('/profile/resetpassword/{user}', [ProfileController::class, 'resetpassword'])->middleware('auth:sanctum');
