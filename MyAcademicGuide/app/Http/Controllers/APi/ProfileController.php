@@ -21,8 +21,8 @@ class ProfileController extends Controller
             'fullname' => $profileinfo->fullname,
             'email' => $profileinfo->email,
             'campusname' => $profileinfo->campus->campusname,
-            'department'=>$profileinfo->student->department->departmentname,
-            'schoolname'=>$profileinfo->student->department->school->schoolname,
+            'department' => $profileinfo->student->department->departmentname,
+            'schoolname' => $profileinfo->student->department->school->schoolname,
             'image' => $profileinfo->image,
         ]);
     }
@@ -119,6 +119,24 @@ class ProfileController extends Controller
         Session::forget('new_password');
         Session::forget('verified_user_id');
 
+        return response()->json(['message' => 'Password updated successfully.']);
+    }
+    public function resetpassword(Request $request, User $user)
+    {
+
+        $request->validate([
+            'password' => [
+                'required',
+                'string',
+                'confirmed',
+                'min:8',
+                'regex:/[A-Z]/', // At least one uppercase letter
+                'regex:/[a-z]/', // At least one lowercase letter
+                'regex:/[0-9]/', // At least one number
+                'regex:/[@$!%*?&]/', // At least one special character
+            ],
+        ]);
+        $user->update(['password' => $request->password]);
         return response()->json(['message' => 'Password updated successfully.']);
     }
     public function getadvisors(Request $request)
