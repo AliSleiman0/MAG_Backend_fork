@@ -123,7 +123,6 @@ class ProfileController extends Controller
     }
     public function resetpassword(Request $request, User $user)
     {
-
         $request->validate([
             'password' => [
                 'required',
@@ -133,10 +132,10 @@ class ProfileController extends Controller
                 'regex:/[A-Z]/', // At least one uppercase letter
                 'regex:/[a-z]/', // At least one lowercase letter
                 'regex:/[0-9]/', // At least one number
-                'regex:/[@$!%*?&]/', // At least one special character
+                'regex:/[@$!%*?&.]/', // At least one special character
             ],
         ]);
-        $user->update(['password' => $request->password]);
+        $user->update(['password' => Hash::make($request->password)]);
         return response()->json(['message' => 'Password updated successfully.']);
     }
     public function getadvisors(Request $request)
