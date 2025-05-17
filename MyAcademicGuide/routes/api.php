@@ -35,3 +35,4 @@ Route::get('/advisorprofile/{user}', action: [AdvisorController::class, 'advisor
 Route::post('/smartschedule', action: [TimeTableController::class, 'smartschedule'])->middleware('auth:sanctum');
 Route::get('/getProfileById/{user}', action: [AdvisorController::class, 'profile']);
 Route::put('/profile/resetpassword/{user}', [ProfileController::class, 'resetpassword'])->middleware('auth:sanctum');
+Route::get('/automated_pos_for_advisor/{studentid}', action: [AdvisorController::class, 'automated_pos_for_advisor'])->middleware('auth:sanctum');

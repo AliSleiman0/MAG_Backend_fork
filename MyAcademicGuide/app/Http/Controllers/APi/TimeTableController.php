@@ -297,49 +297,70 @@ class TimeTableController extends Controller
         $newStart = strtotime($newSection['startTime']);
         $newEnd = strtotime($newSection['endTime']);
 
-        // 1. Calculate day-sharing strength (MASSIVE bonus)
-        $sharedDayStrength = 0;
-        $existingDays = [];
+        // 1. Day Distribution Scoring
+        $existingDayCounts = array_fill(1, 7, 0); // Track courses per day (1=Mon..7=Sun)
+        $sharedDayBonus = 0;
 
         foreach ($schedule as $existing) {
             foreach ($existing['daysOfWeek'] as $day) {
-                $existingDays[$day] = true;
+                $existingDayCounts[$day]++;
             }
         }
 
-        // 2. Apply HUGE bonus for shared days (10000 per shared day)
+        // 2. Balanced Shared Day Logic
         foreach ($newDays as $day) {
-            if (isset($existingDays[$day])) {
-                $sharedDayStrength += 10000; // Extremely large bonus
+            if ($existingDayCounts[$day] > 0) {
+                // Moderate bonus for first shared day, decreasing returns for additional shares
+                $sharedDayBonus += max(50, 100 - ($existingDayCounts[$day] * 20));
             }
         }
-        $score -= $sharedDayStrength;
+        $score -= $sharedDayBonus; // Lower score is better
 
-        // 3. Calculate gap score ONLY on shared days
-        if ($sharedDayStrength > 0) {
-            $minGap = PHP_INT_MAX;
-            foreach ($schedule as $existing) {
-                $commonDays = array_intersect($newDays, $existing['daysOfWeek']);
-                if (empty($commonDays)) continue;
+        // 3. Time Gap Optimization (minutes)
+        $minGap = PHP_INT_MAX;
+        foreach ($schedule as $existing) {
+            $commonDays = array_intersect($newDays, $existing['daysOfWeek']);
+            if (empty($commonDays)) continue;
 
-                $existingStart = strtotime($existing['startTime']);
-                $existingEnd = strtotime($existing['endTime']);
+            $existingStart = strtotime($existing['startTime']);
+            $existingEnd = strtotime($existing['endTime']);
 
-                if ($newStart >= $existingEnd) {
-                    $gap = $newStart - $existingEnd;
-                } elseif ($newEnd <= $existingStart) {
-                    $gap = $existingStart - $newEnd;
+            if ($newStart >= $existingEnd) {
+                $gap = ($newStart - $existingEnd) / 60; // Convert to minutes
+            } elseif ($newEnd <= $existingStart) {
+                $gap = ($existingStart - $newEnd) / 60;
+            } else {
+                $gap = 0; // Hard conflict
+            }
+
+            // Progressive gap scoring:
+            // - Ideal: 60-120 minute gaps
+            // - Penalize <30min or >3hr gaps
+            if ($gap > 0) {
+                if ($gap < 30) {
+                    $gapScore = 50 + (30 - $gap) * 2; // Steep penalty for tight gaps
+                } elseif ($gap > 180) {
+                    $gapScore = 30 + ($gap - 180) * 0.5; // Small penalty for very large gaps
                 } else {
-                    $gap = 0;
+                    $gapScore = -100; // Bonus for ideal gaps
                 }
-
-                if ($gap < $minGap) $minGap = $gap;
+                $minGap = min($minGap, $gapScore);
             }
-            $score += ($minGap !== PHP_INT_MAX) ? $minGap : 0;
+        }
+        $score += ($minGap !== PHP_INT_MAX) ? $minGap : 0;
+
+        // 4. Time of Day Preference
+        $hour = date('G', $newStart);
+        if ($hour < 9) {
+            $score += 20; // Slight penalty for very early classes
+        } elseif ($hour > 16) {
+            $score += 30; // Moderate penalty for late classes
         }
 
-        // 4. Tiny time preference (minimal impact)
-        $score += $newStart / 36000; // Very small weight
+        // 5. Course Density Penalty
+        foreach ($newDays as $day) {
+            $score += $existingDayCounts[$day] * 15; // Linear penalty for busy days
+        }
 
         return $score;
     }
