@@ -7,6 +7,7 @@ use App\Http\Controllers\APi\ProfileController;
 use App\Http\Controllers\APi\POSController;
 use App\Http\Controllers\APi\CustomizedPOSController;
 use App\Http\Controllers\APi\AutomatedPOSController;
+use App\Http\Controllers\APi\ITController;
 use App\Http\Controllers\APi\TimeTableController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -36,3 +37,4 @@ Route::post('/smartschedule', action: [TimeTableController::class, 'smartschedul
 Route::get('/getProfileById/{user}', action: [AdvisorController::class, 'profile']);
 Route::put('/profile/resetpassword/{user}', [ProfileController::class, 'resetpassword'])->middleware('auth:sanctum');
 Route::get('/automated_pos_for_advisor/{studentid}', action: [AdvisorController::class, 'automated_pos_for_advisor'])->middleware('auth:sanctum');
+Route::post('/set_pos', action: [ITController::class, 'set_pos'])->middleware('auth:sanctum');
