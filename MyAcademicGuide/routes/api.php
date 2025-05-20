@@ -38,3 +38,5 @@ Route::get('/getProfileById/{user}', action: [AdvisorController::class, 'profile
 Route::put('/profile/resetpassword/{user}', [ProfileController::class, 'resetpassword'])->middleware('auth:sanctum');
 Route::get('/automated_pos_for_advisor/{studentid}', action: [AdvisorController::class, 'automated_pos_for_advisor'])->middleware('auth:sanctum');
 Route::post('/set_pos', action: [ITController::class, 'set_pos'])->middleware('auth:sanctum');
+Route::post('/remove_pos', action: [ITController::class, 'remove_pos'])->middleware('auth:sanctum');
+Route::get('/getAllDepartmentsPOS', action: [ITController::class, 'getAllDepartmentsPOS'])->middleware('auth:sanctum');
