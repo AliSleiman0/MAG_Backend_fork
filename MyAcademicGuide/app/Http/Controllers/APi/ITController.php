@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Course;
 use App\Models\CoursePrerequisite;
+use App\Models\Department;
 use Illuminate\Support\Facades\DB;
 
 
@@ -150,5 +151,111 @@ class ITController extends Controller
         return [
             'Inserted Successfully?' => $insertion
         ];
+    }
+    public function remove_pos(Request $request)
+    {
+        $departmentid = $request->departmentid;
+        $removedepartment = Course::with('departments')->get();
+        $filteredCourses = [];
+        foreach ($removedepartment as $course) {
+            // Check if the course has only one department and matches the given department ID
+            if (count($course['departments']) === 1 && $course['departments'][0]['departmentid'] == $departmentid) {
+                $filteredCourses[] = $course->courseid;
+            }
+        }
+        $deletion = Course::whereIn('courseid', $filteredCourses)->delete();
+
+        $deletion2 = DB::table('course_department')
+            ->where('departmentid', $departmentid)
+            ->delete();
+        return (["Deleted?" => $deletion]);
+    }
+    public function getAllDepartmentsPOS()
+    {
+        // Get departments with their courses and prerequisites
+        $departments = Department::with(['courses.prerequisites'])->get();
+
+        return $departments->map(function ($department) {
+            // Get all course IDs and codes for this department
+            $departmentCourses = $department->courses;
+            $departmentCourseIds = $departmentCourses->pluck('courseid')->toArray();
+            $courseCodeMap = $departmentCourses->pluck('coursecode', 'courseid');
+
+            // Transform courses
+            $transformedCourses = $departmentCourses->map(function ($course) use ($departmentCourseIds, $courseCodeMap) {
+                $prerequisites = [];
+                $corequisites = [];
+
+                foreach ($course->prerequisites as $relation) {
+                    // Check prerequisite
+                    if (
+                        $relation->prerequisitecourseid &&
+                        in_array($relation->prerequisitecourseid, $departmentCourseIds)
+                    ) {
+                        $prerequisites[] = $courseCodeMap[$relation->prerequisitecourseid] ?? null;
+                    }
+
+                    // Check corequisite
+                    if (
+                        $relation->corerequisiteid &&
+                        in_array($relation->corerequisiteid, $departmentCourseIds)
+                    ) {
+                        $corequisites[] = $courseCodeMap[$relation->corerequisiteid] ?? null;
+                    }
+                }
+
+                // Clean and format
+                $prerequisites = array_filter(array_unique($prerequisites));
+                $corequisites = array_filter(array_unique($corequisites));
+
+                return [
+                    'courseid' => $course->courseid,
+                    'code' => $course->coursecode,
+                    'title' => $course->coursename,
+                    'credits' => $course->credits,
+                    'type' => $course->coursetype,
+                    'semesters' => $course->semester,
+                    'prerequisites' => empty($prerequisites) ? null : implode(',', $prerequisites),
+                    'corequisites' => empty($corequisites) ? null : implode(',', $corequisites)
+                ];
+            });
+
+            // Build prerequisitesCorequisites
+            $prerequisitesCorequisites = $departmentCourses->flatMap(function ($course) use ($departmentCourseIds, $courseCodeMap) {
+                return $course->prerequisites->map(function ($relation) use ($departmentCourseIds, $courseCodeMap, $course) {
+                    // Validate both courses belong to department
+                    $valid = true;
+
+                    if (
+                        $relation->prerequisitecourseid &&
+                        !in_array($relation->prerequisitecourseid, $departmentCourseIds)
+                    ) {
+                        $valid = false;
+                    }
+
+                    if (
+                        $relation->corerequisiteid &&
+                        !in_array($relation->corerequisiteid, $departmentCourseIds)
+                    ) {
+                        $valid = false;
+                    }
+
+                    if (!$valid) return null;
+
+                    return [
+                        'courseCode' => $course->coursecode,
+                        'prerequisiteCourseCode' => $courseCodeMap[$relation->prerequisitecourseid] ?? null,
+                        'corequisiteCourseCode' => $courseCodeMap[$relation->corerequisiteid] ?? null
+                    ];
+                })->filter();
+            });
+
+            return [
+                'departmentId' => $department->departmentid,
+                'departmentName' => $department->departmentname,
+                'courses' => $transformedCourses,
+                'prerequisitesCorequisites' => $prerequisitesCorequisites->values()
+            ];
+        });
     }
 }
